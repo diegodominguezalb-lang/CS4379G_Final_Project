@@ -10,8 +10,20 @@ pinned: false
 
 # NOAA Storm Events Dashboard
 
-Interactive Streamlit dashboard exploring how disaster type, scale, and geography
-relate to the economic impact of storm events in the United States (1950–present).
+Interactive Streamlit dashboard exploring 75 years of U.S. weather disasters — analyzing
+how storm type, geography, and season relate to economic damage and human impact (1950–2025).
+
+**Live demo:** [huggingface.co/spaces/diegodomin/CS4379FinalProject](https://huggingface.co/spaces/diegodomin/CS4379FinalProject)
+
+## Dashboard Tabs
+
+| Tab | Contents |
+|-----|----------|
+| **Overview** | KPI cards, top event types bar, property damage histogram (log scale, USD labels), human impact bar |
+| **Damage Analysis** | Total damage stacked bar, average damage per event, frequency vs. damage bubble scatter, property vs. crop scatter |
+| **Regional Analysis** | Choropleth map by state, top-15 states stacked bar, event-count/damage correlation histogram, state drill-down |
+| **Time Series** | Annual event frequency line, annual damage bar, top-8 event trends, seasonal patterns (filterable by state + event type) |
+| **Multivariate** | Pearson correlation matrix heatmap, normalized risk-profile heatmap (top 15 event types) |
 
 ## Setup
 
@@ -41,31 +53,34 @@ The app opens at http://localhost:8501.
 
 ## Data
 
-The dashboard reads NOAA Storm Events CSV files from the `DataForProject/` folder.
+The dashboard loads data from Hugging Face Datasets (`diegodomin/noaa-storm-events → storms.parquet`)
+on first run and caches it locally. Raw NOAA CSV files can also be placed in `DataForProject/`
+for offline use or to rebuild the parquet.
 
-### Fetch / refresh the data
-
-Use the included Python script (works on Windows, macOS, and Linux — no extra dependencies):
-
-```bash
-# Download all years (1950–present), skipping files already on disk
-python fetch_data.py
-
-# Download a specific range
-python fetch_data.py --start 2000 --end 2020
-
-# Force re-download even if files exist
-python fetch_data.py --no-skip-existing
-```
-
-Data is fetched directly from the NOAA FTP server:
-`https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles`
-
-Files follow the naming convention:
-`StormEvents_details-ftp_v1.0_d{YEAR}_c{release_date}.csv`
-
-**Data source:** NOAA National Centers for Environmental Information (NCEI)  
+**Source:** NOAA National Centers for Environmental Information (NCEI)  
+`https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles`  
 **License:** U.S. Government Open Data — public domain
+
+> **Note:** Pre-1996 records cover only tornado, thunderstorm, and hail events due to
+> NOAA's narrower event taxonomy at the time. Post-1996 data includes ~60 distinct event types.
+
+## Project Structure
+
+```
+dashboard.py          # Streamlit app entry point — page config, sidebar, tab routing
+requirements.txt      # Python dependencies
+Dockerfile            # Container definition (Hugging Face Spaces, port 7860)
+tabs/
+  overview.py         # Tab 1 — KPI cards, event bar, histogram, human impact
+  damage.py           # Tab 2 — Damage breakdown and scatter plots
+  regional.py         # Tab 3 — Geographic analysis and choropleth map
+  timeseries.py       # Tab 4 — Trends over time and seasonal patterns
+  multivariate.py     # Tab 5 — Correlation matrix and risk profile heatmap
+utils/
+  data_loader.py      # HF Hub fetch, local CSV pipeline, parquet caching
+  formatting.py       # _fmt_usd(), _dollar_yaxis(), Okabe-Ito color palette
+DataForProject/       # Raw NOAA CSV files (not committed — gitignored)
+```
 
 ## Docker
 
@@ -74,15 +89,15 @@ Files follow the naming convention:
 docker build -t noaa-storm-dashboard .
 
 # Run
-docker run -p 8501:8501 -v "$(pwd)/DataForProject:/app/DataForProject" noaa-storm-dashboard
+docker run -p 7860:7860 noaa-storm-dashboard
 ```
 
-## Deploy (Streamlit Community Cloud)
+## Deployment
 
-1. Push this repo to a **public** GitHub repository.
-2. Go to [share.streamlit.io](https://share.streamlit.io) → **New app**.
-3. Select your repo, branch `main`, and set **Main file path** to `dashboard.py`.
-4. Click **Deploy** — the app rebuilds automatically on every `git push`.
+The app is deployed on **Hugging Face Spaces** (Docker SDK).  
+Every push to the `space` remote redeploys automatically.
 
-> **Note:** Streamlit Community Cloud has a 1 GB RAM limit. If the full CSV dataset
-> exceeds memory, consider loading a subset of years or hosting the data externally.
+```bash
+git remote add space https://huggingface.co/spaces/diegodomin/CS4379FinalProject
+git push space main
+```
