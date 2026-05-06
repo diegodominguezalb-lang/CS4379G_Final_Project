@@ -33,6 +33,16 @@ np.random.seed(42)
 @st.cache_data(show_spinner=False)
 def data_fingerprint(data_dir: str = "DataForProject") -> tuple[str, int, str]:
     """Return (short_hash, file_count, newest_file_date) for the CSV snapshot."""
+    # HF Hub source
+    if _HF_AVAILABLE and _HF_DATASET:
+        return _HF_DATASET, 1, "huggingface"
+    # Local parquet
+    if os.path.exists(_PARQUET_LOCAL):
+        stat = os.stat(_PARQUET_LOCAL)
+        short = hashlib.sha256(f"storms.parquet-{stat.st_size}".encode()).hexdigest()[:8]
+        date_str = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d")
+        return short, 1, date_str
+    # Local CSVs
     files = sorted(glob.glob(f"{data_dir}/*.csv"))
     if not files:
         return "no-data", 0, "n/a"
