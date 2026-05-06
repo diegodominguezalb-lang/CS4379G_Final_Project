@@ -13,6 +13,12 @@ import shutil
 import urllib.request
 from datetime import datetime, timezone
 
+try:
+    from huggingface_hub import hf_hub_download
+    _HF_AVAILABLE = True
+except ImportError:
+    _HF_AVAILABLE = False
+
 # ── Colorblind-safe palette (Okabe-Ito, Lecture 21 § HCI for Viz) ──────────────────
 # Color is NEVER the only signal; charts pair color with text labels / position.
 OKABE_ITO = [
@@ -52,6 +58,25 @@ st.set_page_config(
 # ──────────────────────────────────────────────────────────────────────────────
 # Data loading & processing (cached)
 # ──────────────────────────────────────────────────────────────────────────────
+# Hugging Face dataset config — set HF_DATASET to your repo ID after uploading
+# e.g. "your-hf-username/noaa-storm-events"
+# ──────────────────────────────────────────────────────────────────────────────
+_HF_DATASET = os.environ.get("HF_DATASET", "")
+_PARQUET_LOCAL = os.path.join(_DATA_DIR, "storms.parquet")
+
+@st.cache_data(show_spinner="Downloading dataset from Hugging Face…")
+def _load_from_hf() -> pd.DataFrame:
+    path = hf_hub_download(
+        repo_id=_HF_DATASET,
+        filename="storms.parquet",
+        repo_type="dataset",
+    )
+    return pd.read_parquet(path)
+
+def _load_local_parquet() -> pd.DataFrame:
+    return pd.read_parquet(_PARQUET_LOCAL)
+
+# ──────────────────────────────────────────────────────────────────────────────
 # NOAA auto-fetch (runs when DataForProject/ is empty, e.g. on Streamlit Cloud)
 # ──────────────────────────────────────────────────────────────────────────────
 _NOAA_BASE = "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles"
@@ -78,10 +103,18 @@ def _noaa_fetch_year(index_html: str, year: int) -> bool:
         return False
 
 def _ensure_data() -> None:
-    """If DataForProject/ has no CSVs, show a year-range picker and fetch from NOAA."""
+    """Return immediately if data is available (HF, local parquet, or CSVs).
+    Otherwise show a year-range picker and fetch from NOAA."""
+    # 1. Hugging Face dataset (Spaces deployment)
+    if _HF_AVAILABLE and _HF_DATASET:
+        return
+    # 2. Local pre-built parquet
+    if os.path.exists(_PARQUET_LOCAL):
+        return
+    # 3. Local CSVs
     os.makedirs(_DATA_DIR, exist_ok=True)
     if glob.glob(f"{_DATA_DIR}/*.csv"):
-        return  # data already present
+        return
 
     st.warning("No local data found. Fetch it directly from the NOAA FTP server below.")
     current_year = datetime.now().year
@@ -122,6 +155,15 @@ def _ensure_data() -> None:
 # ──────────────────────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner="Loading storm event data…")
 def load_data() -> pd.DataFrame:
+    # ── Priority 1: Hugging Face Hub (Spaces deployment) ────────────────────
+    if _HF_AVAILABLE and _HF_DATASET:
+        return _load_from_hf()
+
+    # ── Priority 2: local pre-built parquet ─────────────────────────────────
+    if os.path.exists(_PARQUET_LOCAL):
+        return _load_local_parquet()
+
+    # ── Priority 3: raw CSVs (with full processing pipeline) ────────────────
     csv_files = glob.glob("DataForProject/*.csv")
     if not csv_files:
         st.error("No CSV files found in DataForProject/")

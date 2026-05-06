@@ -13,7 +13,7 @@ __pycache__/
 .ipynb_checkpoints/
 *.ipynb
 
-# Data files (too large for Git - fetch via fetch_data.py)
+# Data files (too large for Git - fetch via fetch_data.py or build_parquet.py)
 DataForProject/
 
 # Streamlit secrets (never commit)
