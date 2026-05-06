@@ -165,8 +165,9 @@ def render_regional(df: pd.DataFrame, df_all: pd.DataFrame | None = None) -> Non
             fig_corr.update_layout(
                 coloraxis_showscale=False,
                 height=len(corr_df) * 18 + 80,
-                margin=dict(l=10, r=10, t=40, b=40),
+                margin=dict(l=10, r=10, t=50, b=10),
                 yaxis=dict(tickfont=dict(size=10)),
+                xaxis=dict(side="top", title=dict(standoff=8)),
             )
             fig_corr.update_traces(
                 hovertemplate="<b>%{y}</b><br>r = %{x:.2f}<extra></extra>"
