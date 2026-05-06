@@ -61,6 +61,7 @@ st.set_page_config(
 # Hugging Face dataset config — set HF_DATASET to your repo ID after uploading
 # e.g. "your-hf-username/noaa-storm-events"
 # ──────────────────────────────────────────────────────────────────────────────
+_DATA_DIR = "DataForProject"
 _HF_DATASET = os.environ.get("HF_DATASET", "")
 _PARQUET_LOCAL = os.path.join(_DATA_DIR, "storms.parquet")
 
@@ -80,7 +81,6 @@ def _load_local_parquet() -> pd.DataFrame:
 # NOAA auto-fetch (runs when DataForProject/ is empty, e.g. on Streamlit Cloud)
 # ──────────────────────────────────────────────────────────────────────────────
 _NOAA_BASE = "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles"
-_DATA_DIR = "DataForProject"
 
 def _noaa_fetch_year(index_html: str, year: int) -> bool:
     """Download and decompress one year's CSV. Returns True on success."""
