@@ -164,14 +164,15 @@ def render_regional(df: pd.DataFrame, df_all: pd.DataFrame | None = None) -> Non
             )
             fig_corr.update_layout(
                 coloraxis_showscale=False,
-                height=500,
-                margin=dict(l=10, r=10),
+                height=len(corr_df) * 18 + 80,
+                margin=dict(l=10, r=10, t=40, b=40),
                 yaxis=dict(tickfont=dict(size=10)),
             )
             fig_corr.update_traces(
                 hovertemplate="<b>%{y}</b><br>r = %{x:.2f}<extra></extra>"
             )
-            st.plotly_chart(fig_corr, use_container_width=True)
+            with st.container(height=480):
+                st.plotly_chart(fig_corr, use_container_width=True)
             st.caption(
                 " **Sorted bar chart** — each bar is one state; length and color show the Pearson r "
                 "between event-type frequency and total damage within that state. "
