@@ -35,18 +35,21 @@ The dashboard reads NOAA Storm Events CSV files from the `DataForProject/` folde
 
 ### Fetch / refresh the data
 
-Download yearly CSV files from the NOAA FTP server:
+Use the included Python script (works on Windows, macOS, and Linux — no extra dependencies):
 
 ```bash
-# Example: download all detail files from 1950 to present
-# (run from project root — requires curl or wget)
-mkdir -p DataForProject
-BASE="https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles"
-for YEAR in $(seq 1950 2025); do
-    FILE=$(curl -s "$BASE/" | grep -oP "StormEvents_details-ftp_v1\.0_d${YEAR}_c\d+\.csv\.gz" | tail -1)
-    [ -n "$FILE" ] && curl -sO "$BASE/$FILE" && gunzip "$FILE" && mv "${FILE%.gz}" DataForProject/
-done
+# Download all years (1950–present), skipping files already on disk
+python fetch_data.py
+
+# Download a specific range
+python fetch_data.py --start 2000 --end 2020
+
+# Force re-download even if files exist
+python fetch_data.py --no-skip-existing
 ```
+
+Data is fetched directly from the NOAA FTP server:
+`https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles`
 
 Files follow the naming convention:
 `StormEvents_details-ftp_v1.0_d{YEAR}_c{release_date}.csv`

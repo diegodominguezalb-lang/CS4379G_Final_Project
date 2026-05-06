@@ -1,4 +1,4 @@
-# Virtual environment
+﻿# Virtual environment
 .venv/
 venv/
 env/
@@ -13,7 +13,7 @@ __pycache__/
 .ipynb_checkpoints/
 *.ipynb
 
-# Data files (too large for Git — fetch via README instructions)
+# Data files (too large for Git - fetch via fetch_data.py)
 DataForProject/
 
 # Streamlit secrets (never commit)
