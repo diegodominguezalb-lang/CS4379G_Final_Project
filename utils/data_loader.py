@@ -51,6 +51,25 @@ def data_fingerprint(data_dir: str = "DataForProject") -> tuple[str, int, str]:
 
 
 # ── HF Hub loader ─────────────────────────────────────────────────────────────
+def _ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Guarantee YEAR, MONTH, and TOTAL_DAMAGE columns exist on any loaded df."""
+    if "BEGIN_DATE_TIME" in df.columns:
+        # Already datetime (parquet) or still a string — handle both
+        if not pd.api.types.is_datetime64_any_dtype(df["BEGIN_DATE_TIME"]):
+            df["BEGIN_DATE_TIME"] = pd.to_datetime(
+                df["BEGIN_DATE_TIME"], format="%m/%d/%Y %H:%M:%S", errors="coerce"
+            )
+        if "YEAR" not in df.columns or df["YEAR"].isna().all():
+            df["YEAR"] = df["BEGIN_DATE_TIME"].dt.year
+        if "MONTH" not in df.columns or df["MONTH"].isna().all():
+            df["MONTH"] = df["BEGIN_DATE_TIME"].dt.month
+    if "TOTAL_DAMAGE" not in df.columns:
+        prop = pd.to_numeric(df.get("DAMAGE_PROPERTY", 0), errors="coerce").fillna(0)
+        crop = pd.to_numeric(df.get("DAMAGE_CROPS", 0), errors="coerce").fillna(0)
+        df["TOTAL_DAMAGE"] = prop + crop
+    return df
+
+
 @st.cache_data(show_spinner="Downloading dataset from Hugging Face…")
 def _load_from_hf() -> pd.DataFrame:
     path = hf_hub_download(
@@ -58,11 +77,11 @@ def _load_from_hf() -> pd.DataFrame:
         filename="storms.parquet",
         repo_type="dataset",
     )
-    return pd.read_parquet(path)
+    return _ensure_columns(pd.read_parquet(path))
 
 
 def _load_local_parquet() -> pd.DataFrame:
-    return pd.read_parquet(_PARQUET_LOCAL)
+    return _ensure_columns(pd.read_parquet(_PARQUET_LOCAL))
 
 
 # ── NOAA auto-fetch ───────────────────────────────────────────────────────────
@@ -208,12 +227,14 @@ def load_data() -> pd.DataFrame:
     # datetime conversion
     raw_year = pd.to_numeric(df["YEAR"], errors="coerce") if "YEAR" in df.columns else None
 
-    df["BEGIN_DATE_TIME"] = pd.to_datetime(
-        df["BEGIN_DATE_TIME"], format="%m/%d/%Y %H:%M:%S", errors="coerce"
-    )
-    df["END_DATE_TIME"] = pd.to_datetime(
-        df["END_DATE_TIME"], format="%m/%d/%Y %H:%M:%S", errors="coerce"
-    )
+    if not pd.api.types.is_datetime64_any_dtype(df["BEGIN_DATE_TIME"]):
+        df["BEGIN_DATE_TIME"] = pd.to_datetime(
+            df["BEGIN_DATE_TIME"], format="%m/%d/%Y %H:%M:%S", errors="coerce"
+        )
+    if "END_DATE_TIME" in df.columns and not pd.api.types.is_datetime64_any_dtype(df["END_DATE_TIME"]):
+        df["END_DATE_TIME"] = pd.to_datetime(
+            df["END_DATE_TIME"], format="%m/%d/%Y %H:%M:%S", errors="coerce"
+        )
     df["YEAR"] = df["BEGIN_DATE_TIME"].dt.year
     if raw_year is not None:
         df["YEAR"] = df["YEAR"].fillna(raw_year)
