@@ -97,7 +97,6 @@ def render_multivariate(df: pd.DataFrame) -> None:
         title="Normalized Risk Profile — Top 15 Event Types",
         aspect="auto",
         labels={"color": "Relative intensity"},
-        custom_data=[hover.values],
     )
     # Overlay the raw-value text
     for col_idx, col_name in enumerate(norm.columns):
