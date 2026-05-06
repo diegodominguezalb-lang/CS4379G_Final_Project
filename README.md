@@ -1,4 +1,14 @@
-﻿# NOAA Storm Events Dashboard
+﻿---
+title: NOAA Storm Events Dashboard
+emoji: ⛈️
+colorFrom: blue
+colorTo: gray
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
+# NOAA Storm Events Dashboard
 
 Interactive Streamlit dashboard exploring how disaster type, scale, and geography
 relate to the economic impact of storm events in the United States (1950–present).
