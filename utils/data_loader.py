@@ -53,16 +53,30 @@ def data_fingerprint(data_dir: str = "DataForProject") -> tuple[str, int, str]:
 # ── HF Hub loader ─────────────────────────────────────────────────────────────
 def _ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Guarantee YEAR, MONTH, and TOTAL_DAMAGE columns exist on any loaded df."""
-    if "BEGIN_DATE_TIME" in df.columns:
-        # Already datetime (parquet) or still a string — handle both
-        if not pd.api.types.is_datetime64_any_dtype(df["BEGIN_DATE_TIME"]):
-            df["BEGIN_DATE_TIME"] = pd.to_datetime(
-                df["BEGIN_DATE_TIME"], format="%m/%d/%Y %H:%M:%S", errors="coerce"
-            )
-        if "YEAR" not in df.columns or df["YEAR"].isna().all():
+    # ── YEAR ──────────────────────────────────────────────────────────────────
+    if "YEAR" not in df.columns or df["YEAR"].isna().all():
+        if "BEGIN_YEARMONTH" in df.columns:
+            df["YEAR"] = (df["BEGIN_YEARMONTH"] // 100).astype("Int64")
+        elif "BEGIN_DATE_TIME" in df.columns:
+            if not pd.api.types.is_datetime64_any_dtype(df["BEGIN_DATE_TIME"]):
+                df["BEGIN_DATE_TIME"] = pd.to_datetime(
+                    df["BEGIN_DATE_TIME"], format="%m/%d/%Y %H:%M:%S", errors="coerce"
+                )
             df["YEAR"] = df["BEGIN_DATE_TIME"].dt.year
-        if "MONTH" not in df.columns or df["MONTH"].isna().all():
+
+    # ── MONTH ─────────────────────────────────────────────────────────────────
+    if "MONTH" not in df.columns or df["MONTH"].isna().all():
+        if "BEGIN_YEARMONTH" in df.columns:
+            # YYYYMM → last two digits = month
+            df["MONTH"] = (df["BEGIN_YEARMONTH"] % 100).astype("Int64")
+        elif "BEGIN_DATE_TIME" in df.columns:
+            if not pd.api.types.is_datetime64_any_dtype(df["BEGIN_DATE_TIME"]):
+                df["BEGIN_DATE_TIME"] = pd.to_datetime(
+                    df["BEGIN_DATE_TIME"], format="%m/%d/%Y %H:%M:%S", errors="coerce"
+                )
             df["MONTH"] = df["BEGIN_DATE_TIME"].dt.month
+
+    # ── TOTAL_DAMAGE ──────────────────────────────────────────────────────────
     if "TOTAL_DAMAGE" not in df.columns:
         prop = pd.to_numeric(df.get("DAMAGE_PROPERTY", 0), errors="coerce").fillna(0)
         crop = pd.to_numeric(df.get("DAMAGE_CROPS", 0), errors="coerce").fillna(0)
