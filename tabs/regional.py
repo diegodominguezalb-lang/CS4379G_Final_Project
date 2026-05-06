@@ -136,20 +136,35 @@ def render_regional(df: pd.DataFrame) -> None:
 
         if state_corrs:
             corr_df = pd.DataFrame(state_corrs.items(), columns=["STATE", "CORRELATION"])
-            fig_corr = px.histogram(
+            corr_df = corr_df.sort_values("CORRELATION", ascending=True)
+            corr_df["COLOR"] = corr_df["CORRELATION"].apply(
+                lambda v: "High" if v >= 0.5 else ("Low" if v < 0 else "Mid")
+            )
+            fig_corr = px.bar(
                 corr_df,
                 x="CORRELATION",
-                nbins=20,
-                title="Distribution of Frequency–Damage Correlation Across States",
-                labels={"CORRELATION": "Correlation Coefficient", "count": "States"},
-                color_discrete_sequence=["teal"],
+                y="STATE",
+                orientation="h",
+                title="Frequency–Damage Correlation by State",
+                labels={"CORRELATION": "Pearson r (frequency vs. damage)", "STATE": ""},
+                color="CORRELATION",
+                color_continuous_scale="RdYlGn",
+                range_color=[-1, 1],
+            )
+            fig_corr.update_layout(
+                coloraxis_showscale=False,
+                height=max(400, len(corr_df) * 14),
+                margin=dict(l=10, r=10),
+            )
+            fig_corr.update_traces(
+                hovertemplate="<b>%{y}</b><br>r = %{x:.2f}<extra></extra>"
             )
             st.plotly_chart(fig_corr, use_container_width=True)
             st.caption(
-                " **Histogram** — for each state, the Pearson correlation between event frequency "
-                "and total damage across event types is computed, then those state-level correlations "
-                "are plotted here. A value near +1 means states where an event type occurs more often "
-                "also tends to incur more damage; near 0 means frequency and damage are decoupled."
+                " **Sorted bar chart** — each bar is one state; length and color show the Pearson r "
+                "between event-type frequency and total damage within that state. "
+                "Green (r ≈ 1): frequent event types are also the most damaging. "
+                "Red (r ≈ 0 or negative): damage is decoupled from frequency — rare events (e.g., hurricanes) dominate costs."
             )
         else:
             st.info("Not enough data for state correlations in this selection.")
