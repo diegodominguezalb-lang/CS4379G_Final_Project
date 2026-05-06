@@ -19,7 +19,7 @@ np.random.seed(42)
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="NOAA Storm Events Dashboard",
-    page_icon="⛈️",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -29,7 +29,7 @@ _ensure_data()
 df_all = load_data()
 
 # ── Sidebar — global filters ──────────────────────────────────────────────────
-st.sidebar.title("⛈️ Storm Events")
+st.sidebar.title(" Storm Events")
 st.sidebar.markdown("---")
 
 year_vals = df_all["YEAR"].dropna()
@@ -77,11 +77,11 @@ if selected_events:
 
 # ── Navigation tabs ───────────────────────────────────────────────────────────
 tab_overview, tab_damage, tab_regional, tab_timeseries, tab_multivariate = st.tabs([
-    "📊 Overview",
-    "💰 Damage Analysis",
-    "🗺️ Regional Analysis",
-    "📈 Time Series",
-    "🔍 Multivariate",
+    " Overview",
+    " Damage Analysis",
+    " Regional Analysis",
+    " Time Series",
+    " Multivariate",
 ])
 
 with tab_overview:

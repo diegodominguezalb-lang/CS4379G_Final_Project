@@ -12,7 +12,7 @@ def render_damage(df: pd.DataFrame) -> None:
     st.header("Damage Analysis")
 
     if df.empty:
-        st.warning("⚠️ No records match the current filters.")
+        st.warning(" No records match the current filters.")
         st.stop()
 
     top_n_slider = st.slider("Number of top event types to show", 5, 30, 15, key="top_n_damage")
@@ -49,7 +49,7 @@ def render_damage(df: pd.DataFrame) -> None:
     fig_total.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: %{customdata[0]}<extra></extra>")
     st.plotly_chart(fig_total, use_container_width=True)
     st.caption(
-        "📊 **Stacked bar chart** — total USD damage split into property (blue) and crop (orange) "
+        " **Stacked bar chart** — total USD damage split into property (blue) and crop (orange) "
         "for the top N event types (adjust with the slider above). "
         "Hover a segment to see its exact dollar amount. "
         "Hurricane and flooding events typically dominate property damage; "
@@ -87,7 +87,7 @@ def render_damage(df: pd.DataFrame) -> None:
         fig_avg.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_avg, use_container_width=True)
         st.caption(
-            "📊 **Bar chart** — mean total damage (property + crops) per individual event, "
+            " **Bar chart** — mean total damage (property + crops) per individual event, "
             "not total damage. This highlights which event types are most destructive "
             "on a per-event basis, regardless of how often they occur."
         )
@@ -122,7 +122,7 @@ def render_damage(df: pd.DataFrame) -> None:
         fig_scatter.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_scatter, use_container_width=True)
         st.caption(
-            "📊 **Bubble scatter** (both axes log-scaled) — each bubble is an event type; "
+            " **Bubble scatter** (both axes log-scaled) — each bubble is an event type; "
             "size and color encode total damage. Events in the upper-right are both frequent "
             "and costly. Events in the upper-left cause outsized damage despite low frequency "
             "(e.g., Hurricanes)."
@@ -132,7 +132,7 @@ def render_damage(df: pd.DataFrame) -> None:
     st.markdown("---")
     st.subheader("Property Damage vs. Crop Damage (event level)")
     st.caption(
-        "💬 **About this metric** — "
+        " **About this metric** — "
         "`DAMAGE_PROPERTY` = estimated USD value of structural / infrastructure damage. "
         "`DAMAGE_CROPS` = estimated USD value of agricultural crop losses. "
         "Both are NOAA estimates; individual event accuracy varies."
@@ -172,7 +172,7 @@ def render_damage(df: pd.DataFrame) -> None:
         )
         st.plotly_chart(fig_pvc, use_container_width=True)
         st.caption(
-            "📊 **Scatter plot** (log₁₀ scale, events with non-zero values in both columns). "
+            " **Scatter plot** (log₁₀ scale, events with non-zero values in both columns). "
             "The diffuse cloud confirms property and crop damage are nearly uncorrelated — "
             "different storm types drive each. "
             "Colors use the Okabe-Ito colorblind-safe palette."

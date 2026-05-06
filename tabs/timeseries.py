@@ -16,7 +16,7 @@ def render_timeseries(df: pd.DataFrame) -> None:
     st.header("Time Series Analysis")
 
     if df.empty:
-        st.warning("⚠️ No records match the current filters.")
+        st.warning(" No records match the current filters.")
         st.stop()
 
     col_ts1, col_ts2 = st.columns(2)
@@ -41,7 +41,7 @@ def render_timeseries(df: pd.DataFrame) -> None:
         fig_ts.update_yaxes(rangemode="tozero")
         st.plotly_chart(fig_ts, use_container_width=True)
         st.caption(
-            "⚠️ **Methodology note:** The sharp increase starting ~1996 is primarily a "
+            " **Methodology note:** The sharp increase starting ~1996 is primarily a "
             "reporting artifact — NOAA expanded the Storm Data publication format and event "
             "categorization, not necessarily a true increase in storm frequency. "
             "Analyses comparing pre- and post-1996 counts should account for this."
@@ -66,7 +66,7 @@ def render_timeseries(df: pd.DataFrame) -> None:
         fig_dmg_ts.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_dmg_ts, use_container_width=True)
         st.caption(
-            "📊 **Bar chart** — total property + crop damage (USD) per year. "
+            " **Bar chart** — total property + crop damage (USD) per year. "
             "Large spikes correspond to major hurricane landfalls (e.g., 2005 Katrina season, 2017 Harvey/Irma/Maria, 2024). "
             "Damage values are nominal USD; not inflation-adjusted."
         )
@@ -116,7 +116,7 @@ def render_timeseries(df: pd.DataFrame) -> None:
         fig_month.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_month, use_container_width=True)
         st.caption(
-            "📊 **Bar chart** — total recorded events by calendar month for the filtered selection. "
+            " **Bar chart** — total recorded events by calendar month for the filtered selection. "
             "Peak in May–July reflects tornado season and summer convective activity. "
             "Use the pickers above to isolate a specific state or disaster type."
         )
@@ -139,7 +139,7 @@ def render_timeseries(df: pd.DataFrame) -> None:
         fig_month_dmg.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_month_dmg, use_container_width=True)
         st.caption(
-            "📊 **Bar chart** — total economic damage aggregated by calendar month. "
+            " **Bar chart** — total economic damage aggregated by calendar month. "
             "The August–September spike reflects peak Atlantic hurricane season. "
             "Note: the month distribution can shift significantly when filtered to a single state or event type."
         )
@@ -176,7 +176,7 @@ def render_timeseries(df: pd.DataFrame) -> None:
     fig_trend.update_traces(hovertemplate="<b>%{fullData.name}</b><br>Year: %{x}<br>Damage: %{customdata[0]}<extra></extra>")
     st.plotly_chart(fig_trend, use_container_width=True)
     st.caption(
-        "📊 **Line chart** — annual total economic damage for the 8 highest-damage event types. "
+        " **Line chart** — annual total economic damage for the 8 highest-damage event types. "
         "Hurricane / Tropical Storm events produce large isolated spikes; "
         "frequent events (Hail, Thunderstorm Wind) produce a lower, consistent baseline. "
         "Colors use the Okabe-Ito colorblind-safe palette."

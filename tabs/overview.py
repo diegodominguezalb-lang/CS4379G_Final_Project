@@ -19,7 +19,7 @@ def render_overview(
 
     if df.empty:
         st.warning(
-            "⚠️ No records match the current filters. "
+            " No records match the current filters. "
             "Try widening the year range or clearing the state / event-type selections."
         )
         st.stop()
@@ -35,7 +35,7 @@ def render_overview(
         if df["TOTAL_DAMAGE"].sum() > 0 else 0
     )
     st.info(
-        f"💡 **Key insight:** **{top_event}** accounts for "
+        f" **Key insight:** **{top_event}** accounts for "
         f"**{top_event_share:.0f}%** of total economic damage in the selected period — "
         f"despite being far less frequent than wind or hail events."
     )
@@ -111,7 +111,7 @@ def render_overview(
         )
         st.plotly_chart(fig_bar_ev, use_container_width=True)
         st.caption(
-            "📊 **Horizontal bar chart** — the 12 most frequently recorded event types. "
+            " **Horizontal bar chart** — the 12 most frequently recorded event types. "
             "Thunderstorm Wind and Hail dominate by count, but high frequency does not imply high damage — "
             "compare with the Damage Analysis tab for a fuller picture."
         )
@@ -154,7 +154,7 @@ def render_overview(
             fig_hist.update_layout(showlegend=False, height=420)
             st.plotly_chart(fig_hist, use_container_width=True)
             st.caption(
-                "📊 **Histogram** (log₁₀ x-axis, USD tick labels) — distribution of property damage "
+                " **Histogram** (log₁₀ x-axis, USD tick labels) — distribution of property damage "
                 "across all non-zero events. The peak near $1K–$10K reflects common small-scale events; "
                 "the long right tail extends to multi-billion-dollar catastrophes. "
                 "Hover over any bar to see the exact USD range and event count."
@@ -181,7 +181,7 @@ def render_overview(
         fig_hi.update_layout(showlegend=False, uniformtext_minsize=8)
         st.plotly_chart(fig_hi, use_container_width=True)
         st.caption(
-            "📊 **Bar chart** — cumulative human impact for the filtered selection. "
+            " **Bar chart** — cumulative human impact for the filtered selection. "
             "Direct figures are confirmed; indirect figures include casualties where the event "
             "was a contributing (not sole) cause. Small counts can represent major tragedies — "
             "a single hurricane can dominate the totals."

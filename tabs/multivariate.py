@@ -9,7 +9,7 @@ def render_multivariate(df: pd.DataFrame) -> None:
     st.header("Multivariate Analysis")
 
     if df.empty:
-        st.warning("⚠️ No records match the current filters.")
+        st.warning(" No records match the current filters.")
         st.stop()
 
     # ── Correlation heatmap ───────────────────────────────────────────────────
@@ -33,7 +33,7 @@ def render_multivariate(df: pd.DataFrame) -> None:
     fig_heatmap.update_layout(height=500)
     st.plotly_chart(fig_heatmap, use_container_width=True)
     st.caption(
-        "📊 **Correlation heatmap** — Pearson correlations between key numeric columns. "
+        " **Correlation heatmap** — Pearson correlations between key numeric columns. "
         "Red = strong positive, blue = strong negative, white = no linear relationship. "
         "Values shown to 2 decimal places; only linear relationships are captured here."
     )
@@ -110,7 +110,7 @@ def render_multivariate(df: pd.DataFrame) -> None:
     fig_profile.update_layout(height=520, coloraxis_showscale=True)
     st.plotly_chart(fig_profile, use_container_width=True)
     st.caption(
-        "📊 **Normalized heatmap** — each column is min-max scaled to 0–1 so metrics with "
+        " **Normalized heatmap** — each column is min-max scaled to 0–1 so metrics with "
         "very different units (dollars vs. deaths) are visually comparable. "
         "Cell text shows the actual raw value. Darker = relatively higher within that metric. "
         "Rows are ordered by total damage (highest at top)."
