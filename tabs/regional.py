@@ -113,6 +113,12 @@ def render_regional(df: pd.DataFrame) -> None:
         _dollar_yaxis(fig_state_bar, top_states[["PROPERTY_DAMAGE", "CROP_DAMAGE"]].sum(axis=1).max())
         fig_state_bar.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: %{customdata[0]}<extra></extra>")
         st.plotly_chart(fig_state_bar, use_container_width=True)
+        st.caption(
+            "📊 **Stacked bar chart** — top 15 states by total economic damage, "
+            "split into property (blue) and crop (orange). "
+            "Gulf Coast and Atlantic states dominate due to hurricane exposure; "
+            "Great Plains states show higher crop damage shares from drought and hail."
+        )
 
     # ── State-level frequency–damage correlation histogram ───────────────────
     with col_corr_state:
@@ -139,6 +145,12 @@ def render_regional(df: pd.DataFrame) -> None:
                 color_discrete_sequence=["teal"],
             )
             st.plotly_chart(fig_corr, use_container_width=True)
+            st.caption(
+                "📊 **Histogram** — for each state, the Pearson correlation between event frequency "
+                "and total damage across event types is computed, then those state-level correlations "
+                "are plotted here. A value near +1 means states where an event type occurs more often "
+                "also tends to incur more damage; near 0 means frequency and damage are decoupled."
+            )
         else:
             st.info("Not enough data for state correlations in this selection.")
 
@@ -170,3 +182,8 @@ def render_regional(df: pd.DataFrame) -> None:
     fig_drill.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: %{customdata[0]}<extra></extra>")
     fig_drill.update_layout(coloraxis_showscale=False)
     st.plotly_chart(fig_drill, use_container_width=True)
+    st.caption(
+        "📊 **Bar chart** — top 10 event types by total damage for the selected state. "
+        "Use this to compare which hazards are most costly in a specific region, "
+        "and how that differs from the national picture above."
+    )

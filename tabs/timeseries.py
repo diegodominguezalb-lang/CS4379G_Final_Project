@@ -115,6 +115,11 @@ def render_timeseries(df: pd.DataFrame) -> None:
         )
         fig_month.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_month, use_container_width=True)
+        st.caption(
+            "📊 **Bar chart** — total recorded events by calendar month for the filtered selection. "
+            "Peak in May–July reflects tornado season and summer convective activity. "
+            "Use the pickers above to isolate a specific state or disaster type."
+        )
 
     with col_month2:
         monthly_dmg = seasonal_df.groupby("MONTH")["TOTAL_DAMAGE"].sum().reset_index()
@@ -133,6 +138,11 @@ def render_timeseries(df: pd.DataFrame) -> None:
         fig_month_dmg.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:,.0f}<extra></extra>")
         fig_month_dmg.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_month_dmg, use_container_width=True)
+        st.caption(
+            "📊 **Bar chart** — total economic damage aggregated by calendar month. "
+            "The August–September spike reflects peak Atlantic hurricane season. "
+            "Note: the month distribution can shift significantly when filtered to a single state or event type."
+        )
 
     # ── Top event types trend over time ───────────────────────────────────────
     st.markdown("---")

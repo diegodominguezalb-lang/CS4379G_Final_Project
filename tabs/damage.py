@@ -48,6 +48,13 @@ def render_damage(df: pd.DataFrame) -> None:
     _dollar_yaxis(fig_total, damage_by_type[["DAMAGE_PROPERTY", "DAMAGE_CROPS"]].sum(axis=1).max())
     fig_total.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: %{customdata[0]}<extra></extra>")
     st.plotly_chart(fig_total, use_container_width=True)
+    st.caption(
+        "📊 **Stacked bar chart** — total USD damage split into property (blue) and crop (orange) "
+        "for the top N event types (adjust with the slider above). "
+        "Hover a segment to see its exact dollar amount. "
+        "Hurricane and flooding events typically dominate property damage; "
+        "droughts and ice storms drive disproportionate crop losses."
+    )
 
     st.markdown("---")
 
@@ -79,6 +86,11 @@ def render_damage(df: pd.DataFrame) -> None:
         fig_avg.update_traces(hovertemplate="<b>%{x}</b><br>Avg Damage: %{customdata[0]}<extra></extra>")
         fig_avg.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_avg, use_container_width=True)
+        st.caption(
+            "📊 **Bar chart** — mean total damage (property + crops) per individual event, "
+            "not total damage. This highlights which event types are most destructive "
+            "on a per-event basis, regardless of how often they occur."
+        )
 
     # ── Frequency vs total damage scatter ────────────────────────────────────
     with col_scatter:
@@ -109,6 +121,12 @@ def render_damage(df: pd.DataFrame) -> None:
         )
         fig_scatter.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_scatter, use_container_width=True)
+        st.caption(
+            "📊 **Bubble scatter** (both axes log-scaled) — each bubble is an event type; "
+            "size and color encode total damage. Events in the upper-right are both frequent "
+            "and costly. Events in the upper-left cause outsized damage despite low frequency "
+            "(e.g., Hurricanes)."
+        )
 
     # ── Property vs crop damage scatter (event-level, sampled) ───────────────
     st.markdown("---")

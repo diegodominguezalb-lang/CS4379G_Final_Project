@@ -110,6 +110,11 @@ def render_overview(
             yaxis=dict(tickfont=dict(size=11)),
         )
         st.plotly_chart(fig_bar_ev, use_container_width=True)
+        st.caption(
+            "📊 **Horizontal bar chart** — the 12 most frequently recorded event types. "
+            "Thunderstorm Wind and Hail dominate by count, but high frequency does not imply high damage — "
+            "compare with the Damage Analysis tab for a fuller picture."
+        )
 
     # Damage distribution (log histogram)
     with col_right:
@@ -148,6 +153,12 @@ def render_overview(
             fig_hist.update_xaxes(tickvals=_tick_vals, ticktext=_tick_texts)
             fig_hist.update_layout(showlegend=False, height=420)
             st.plotly_chart(fig_hist, use_container_width=True)
+            st.caption(
+                "📊 **Histogram** (log₁₀ x-axis, USD tick labels) — distribution of property damage "
+                "across all non-zero events. The peak near $1K–$10K reflects common small-scale events; "
+                "the long right tail extends to multi-billion-dollar catastrophes. "
+                "Hover over any bar to see the exact USD range and event count."
+            )
 
     # Human impact summary
     st.markdown("### Human Impact Summary")
@@ -169,3 +180,9 @@ def render_overview(
         fig_hi.update_traces(texttemplate="%{text:,}", textposition="outside")
         fig_hi.update_layout(showlegend=False, uniformtext_minsize=8)
         st.plotly_chart(fig_hi, use_container_width=True)
+        st.caption(
+            "📊 **Bar chart** — cumulative human impact for the filtered selection. "
+            "Direct figures are confirmed; indirect figures include casualties where the event "
+            "was a contributing (not sole) cause. Small counts can represent major tragedies — "
+            "a single hurricane can dominate the totals."
+        )

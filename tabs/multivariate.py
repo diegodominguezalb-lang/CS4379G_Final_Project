@@ -33,6 +33,11 @@ def render_multivariate(df: pd.DataFrame) -> None:
     )
     fig_heatmap.update_layout(height=500)
     st.plotly_chart(fig_heatmap, use_container_width=True)
+    st.caption(
+        "📊 **Correlation heatmap** — Pearson correlations between key numeric columns. "
+        "Red = strong positive, blue = strong negative, white = no linear relationship. "
+        "Values shown to 2 decimal places; only linear relationships are captured here."
+    )
 
     st.markdown(
         """
@@ -79,4 +84,9 @@ def render_multivariate(df: pd.DataFrame) -> None:
                 for f in display_cols},
     )
     st.plotly_chart(fig_pc, use_container_width=True)
-    st.caption("Event type color codes: " + " | ".join(f"{i}={et}" for et, i in event_type_codes.items()))
+    st.caption(
+        "📊 **Parallel coordinates plot** — each line is a sampled event colored by event type. "
+        "Property and crop damage axes use log₁₀ scale; injuries and deaths are raw counts. "
+        "Drag an axis range to filter lines interactively and reveal how event profiles cluster. "
+        "Color key: " + " | ".join(f"{i} = {et}" for et, i in event_type_codes.items())
+    )
