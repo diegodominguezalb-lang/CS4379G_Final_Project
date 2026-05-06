@@ -9,9 +9,7 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Jupyter
-.ipynb_checkpoints/
-*.ipynb
+
 
 # Data files (too large for Git - fetch via fetch_data.py or build_parquet.py)
 DataForProject/
