@@ -122,17 +122,36 @@ def render_damage(df: pd.DataFrame) -> None:
     both_nz = df[(df["DAMAGE_PROPERTY"] > 0) & (df["DAMAGE_CROPS"] > 0)].copy()
     sample = both_nz.sample(min(5000, len(both_nz)), random_state=42) if len(both_nz) > 0 else both_nz
     if len(sample) > 0:
+        sample = sample.copy()
+        sample["LOG_PROP"] = np.log10(sample["DAMAGE_PROPERTY"])
+        sample["LOG_CROP"] = np.log10(sample["DAMAGE_CROPS"])
+        sample["PROP_LABEL"] = sample["DAMAGE_PROPERTY"].apply(_fmt_usd)
+        sample["CROP_LABEL"] = sample["DAMAGE_CROPS"].apply(_fmt_usd)
         fig_pvc = px.scatter(
             sample,
-            x=np.log10(sample["DAMAGE_PROPERTY"]),
-            y=np.log10(sample["DAMAGE_CROPS"]),
+            x="LOG_PROP",
+            y="LOG_CROP",
             color="EVENT_TYPE",
             opacity=0.5,
             color_discrete_sequence=OKABE_ITO,
+            custom_data=["EVENT_TYPE", "PROP_LABEL", "CROP_LABEL"],
             title="log₁₀(Property Damage) vs log₁₀(Crop Damage) — sampled events with both > 0",
-            labels={"x": "log₁₀(Property Damage, USD)", "y": "log₁₀(Crop Damage, USD)"},
+            labels={"LOG_PROP": "Property Damage (USD)", "LOG_CROP": "Crop Damage (USD)"},
         )
-        fig_pvc.update_traces(marker_size=5)
+        _tick_vals  = list(range(0, 13))
+        _tick_texts = ["$1","$10","$100","$1K","$10K","$100K",
+                       "$1M","$10M","$100M","$1B","$10B","$100B","$1T"]
+        fig_pvc.update_xaxes(tickvals=_tick_vals, ticktext=_tick_texts)
+        fig_pvc.update_yaxes(tickvals=_tick_vals, ticktext=_tick_texts)
+        fig_pvc.update_traces(
+            marker_size=5,
+            hovertemplate=(
+                "<b>%{customdata[0]}</b><br>"
+                "Property: %{customdata[1]}<br>"
+                "Crops: %{customdata[2]}"
+                "<extra></extra>"
+            ),
+        )
         st.plotly_chart(fig_pvc, use_container_width=True)
         st.caption(
             "📊 **Scatter plot** (log₁₀ scale, events with non-zero values in both columns). "

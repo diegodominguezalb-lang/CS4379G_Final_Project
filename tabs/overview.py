@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from utils.formatting import OKABE_ITO
+from utils.formatting import OKABE_ITO, _fmt_usd, _fmt_usd
 
 
 def render_overview(
@@ -117,13 +117,35 @@ def render_overview(
         if prop_nz.empty:
             st.info("No events with non-zero property damage in this selection.")
         else:
-            fig_hist = px.histogram(
-                np.log10(prop_nz),
-                nbins=50,
+            log_vals = np.log10(prop_nz)
+            counts, edges = np.histogram(log_vals, bins=50)
+            hist_df = pd.DataFrame({
+                "log_mid": (edges[:-1] + edges[1:]) / 2,
+                "count": counts,
+                "usd_range": [
+                    f"{_fmt_usd(10**lo)} – {_fmt_usd(10**hi)}"
+                    for lo, hi in zip(edges[:-1], edges[1:])
+                ],
+                "bar_width": edges[1:] - edges[:-1],
+            })
+            hist_df = hist_df[hist_df["count"] > 0]
+            fig_hist = px.bar(
+                hist_df,
+                x="log_mid",
+                y="count",
+                custom_data=["usd_range"],
                 title="Property Damage Distribution (log₁₀, non-zero events)",
-                labels={"value": "log₁₀(Damage, USD)", "count": "Events"},
+                labels={"log_mid": "Damage (USD)", "count": "Events"},
                 color_discrete_sequence=["steelblue"],
             )
+            fig_hist.update_traces(
+                width=hist_df["bar_width"].values,
+                hovertemplate="<b>%{customdata[0]}</b><br>Events: %{y:,}<extra></extra>",
+            )
+            _tick_vals  = list(range(0, 13))
+            _tick_texts = ["$1","$10","$100","$1K","$10K","$100K",
+                           "$1M","$10M","$100M","$1B","$10B","$100B","$1T"]
+            fig_hist.update_xaxes(tickvals=_tick_vals, ticktext=_tick_texts)
             fig_hist.update_layout(showlegend=False, height=420)
             st.plotly_chart(fig_hist, use_container_width=True)
 
