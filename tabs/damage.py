@@ -119,6 +119,10 @@ def render_damage(df: pd.DataFrame) -> None:
             textfont_size=9,
             hovertemplate="<b>%{text}</b><br>Events: %{x:,}<br>Total Damage: %{customdata[0]}<extra></extra>",
         )
+        fig_scatter.update_xaxes(
+            tickvals=[100, 1_000, 10_000, 100_000, 1_000_000],
+            ticktext=["100", "1K", "10K", "100K", "1M"],
+        )
         fig_scatter.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_scatter, use_container_width=True)
         st.caption(
