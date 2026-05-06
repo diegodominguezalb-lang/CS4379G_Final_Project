@@ -25,7 +25,7 @@ _STATE_ABBREV = {
 }
 
 
-def render_regional(df: pd.DataFrame) -> None:
+def render_regional(df: pd.DataFrame, df_all: pd.DataFrame | None = None) -> None:
     st.header("Regional Analysis")
 
     if df.empty:
@@ -122,7 +122,8 @@ def render_regional(df: pd.DataFrame) -> None:
 
     # ── State-level frequency–damage correlation histogram ───────────────────
     with col_corr_state:
-        state_event_summary = df.groupby(["STATE", "EVENT_TYPE"]).agg(
+        _corr_source = df_all if df_all is not None else df
+        state_event_summary = _corr_source.groupby(["STATE", "EVENT_TYPE"]).agg(
             TOTAL_DAMAGE=("TOTAL_DAMAGE", "sum"),
             EVENT_COUNT=("EVENT_TYPE", "count"),
         ).reset_index()

@@ -91,7 +91,7 @@ with tab_damage:
     render_damage(df)
 
 with tab_regional:
-    render_regional(df)
+    render_regional(df, df_all)
 
 with tab_timeseries:
     render_timeseries(df)
