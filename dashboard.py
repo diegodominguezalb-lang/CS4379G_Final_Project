@@ -5,8 +5,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import glob
+import gzip
 import hashlib
 import os
+import re
+import shutil
+import urllib.request
 from datetime import datetime, timezone
 
 # ── Colorblind-safe palette (Okabe-Ito, Lecture 21 § HCI for Viz) ──────────────────
@@ -47,6 +51,74 @@ st.set_page_config(
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Data loading & processing (cached)
+# ──────────────────────────────────────────────────────────────────────────────
+# NOAA auto-fetch (runs when DataForProject/ is empty, e.g. on Streamlit Cloud)
+# ──────────────────────────────────────────────────────────────────────────────
+_NOAA_BASE = "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles"
+_DATA_DIR = "DataForProject"
+
+def _noaa_fetch_year(index_html: str, year: int) -> bool:
+    """Download and decompress one year's CSV. Returns True on success."""
+    pattern = rf"StormEvents_details-ftp_v1\.0_d{year}_c\d+\.csv\.gz"
+    matches = re.findall(pattern, index_html)
+    if not matches:
+        return False
+    filename = sorted(matches)[-1]
+    gz_path = os.path.join(_DATA_DIR, filename)
+    csv_path = gz_path.replace(".gz", "")
+    try:
+        with urllib.request.urlopen(f"{_NOAA_BASE}/{filename}", timeout=60) as resp, \
+                open(gz_path, "wb") as out:
+            shutil.copyfileobj(resp, out)
+        with gzip.open(gz_path, "rb") as f_in, open(csv_path, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+        os.remove(gz_path)
+        return True
+    except Exception:
+        return False
+
+def _ensure_data() -> None:
+    """If DataForProject/ has no CSVs, show a year-range picker and fetch from NOAA."""
+    os.makedirs(_DATA_DIR, exist_ok=True)
+    if glob.glob(f"{_DATA_DIR}/*.csv"):
+        return  # data already present
+
+    st.warning("No local data found. Fetch it directly from the NOAA FTP server below.")
+    current_year = datetime.now().year
+    col1, col2 = st.columns(2)
+    start = col1.number_input("Start year", min_value=1950, max_value=current_year,
+                              value=max(1950, current_year - 10), step=1)
+    end = col2.number_input("End year", min_value=1950, max_value=current_year,
+                            value=current_year, step=1)
+    if not st.button("Download data from NOAA"):
+        st.stop()
+
+    try:
+        with st.spinner("Fetching NOAA directory index…"):
+            with urllib.request.urlopen(_NOAA_BASE + "/", timeout=30) as r:
+                index_html = r.read().decode("utf-8", errors="replace")
+    except Exception as exc:
+        st.error(f"Could not reach NOAA server: {exc}")
+        st.stop()
+
+    years = list(range(int(start), int(end) + 1))
+    progress = st.progress(0, text="Starting download…")
+    ok, failed = 0, []
+    for i, year in enumerate(years):
+        progress.progress((i + 1) / len(years), text=f"Downloading {year}…")
+        if _noaa_fetch_year(index_html, year):
+            ok += 1
+        else:
+            failed.append(year)
+
+    progress.empty()
+    if failed:
+        st.warning(f"Downloaded {ok}/{len(years)} years. Not available on server: {failed}")
+    else:
+        st.success(f"Downloaded {ok} year(s). Reloading…")
+    st.cache_data.clear()
+    st.rerun()
+
 # ──────────────────────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner="Loading storm event data…")
 def load_data() -> pd.DataFrame:
@@ -131,6 +203,7 @@ def load_data() -> pd.DataFrame:
     return df
 
 
+_ensure_data()
 df_all = load_data()
 
 # ──────────────────────────────────────────────────────────────────────────────
