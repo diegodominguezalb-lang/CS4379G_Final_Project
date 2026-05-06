@@ -491,6 +491,8 @@ with tab_damage:
         color_discrete_map={"DAMAGE_PROPERTY": "#1f77b4", "DAMAGE_CROPS": "#ff7f0e"},
     )
     fig_total.update_xaxes(tickangle=45)
+    fig_total.update_yaxes(tickformat="$.2s")
+    fig_total.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: $%{y:.3s}<extra></extra>")
     st.plotly_chart(fig_total, use_container_width=True)
 
     st.markdown("---")
@@ -517,6 +519,8 @@ with tab_damage:
             color_continuous_scale="Viridis",
         )
         fig_avg.update_xaxes(tickangle=45)
+        fig_avg.update_yaxes(tickformat="$.2s")
+        fig_avg.update_traces(hovertemplate="<b>%{x}</b><br>Avg Damage: $%{y:.3s}<extra></extra>")
         fig_avg.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_avg, use_container_width=True)
 
@@ -540,7 +544,12 @@ with tab_damage:
             color="TOTAL_DAMAGE",
             color_continuous_scale="Reds",
         )
-        fig_scatter.update_traces(textposition="top center", textfont_size=9)
+        fig_scatter.update_traces(
+            textposition="top center",
+            textfont_size=9,
+            hovertemplate="<b>%{text}</b><br>Events: %{x:,}<br>Total Damage: $%{y:.3s}<extra></extra>",
+        )
+        fig_scatter.update_yaxes(tickformat="$.2s")
         fig_scatter.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_scatter, use_container_width=True)
 
@@ -636,6 +645,10 @@ with tab_regional:
         color_continuous_scale="OrRd",
         title=f"{map_metric.replace('_', ' ').title()} by State",
     )
+    _is_damage_metric = map_metric != "EVENT_COUNT"
+    fig_map.update_coloraxes(
+        colorbar_tickformat="$.2s" if _is_damage_metric else ","
+    )
     fig_map.update_layout(height=500)
     st.plotly_chart(fig_map, use_container_width=True)
     st.caption(
@@ -662,6 +675,8 @@ with tab_regional:
             color_discrete_map={"PROPERTY_DAMAGE": "#1f77b4", "CROP_DAMAGE": "#ff7f0e"},
         )
         fig_state_bar.update_xaxes(tickangle=45)
+        fig_state_bar.update_yaxes(tickformat="$.2s")
+        fig_state_bar.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: $%{y:.3s}<extra></extra>")
         st.plotly_chart(fig_state_bar, use_container_width=True)
 
     # State-level frequency vs damage correlation histogram
@@ -714,6 +729,8 @@ with tab_regional:
         color_continuous_scale="Blues",
     )
     fig_drill.update_xaxes(tickangle=45)
+    fig_drill.update_yaxes(tickformat="$.2s")
+    fig_drill.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:.3s}<extra></extra>")
     fig_drill.update_layout(coloraxis_showscale=False)
     st.plotly_chart(fig_drill, use_container_width=True)
 
@@ -764,6 +781,8 @@ with tab_timeseries:
             color="TOTAL_DAMAGE",
             color_continuous_scale="Reds",
         )
+        fig_dmg_ts.update_yaxes(tickformat="$.2s")
+        fig_dmg_ts.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:.3s}<extra></extra>")
         fig_dmg_ts.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_dmg_ts, use_container_width=True)
         st.caption(
@@ -809,6 +828,8 @@ with tab_timeseries:
             color="TOTAL_DAMAGE",
             color_continuous_scale="Oranges",
         )
+        fig_month_dmg.update_yaxes(tickformat="$.2s")
+        fig_month_dmg.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:.3s}<extra></extra>")
         fig_month_dmg.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_month_dmg, use_container_width=True)
 
@@ -838,6 +859,8 @@ with tab_timeseries:
         labels={"YEAR": "Year", "TOTAL_DAMAGE": "Total Damage (USD)", "EVENT_TYPE": "Event Type"},
         markers=True,
     )
+    fig_trend.update_yaxes(tickformat="$.2s")
+    fig_trend.update_traces(hovertemplate="<b>%{fullData.name}</b><br>Year: %{x}<br>Damage: $%{y:.3s}<extra></extra>")
     st.plotly_chart(fig_trend, use_container_width=True)
     st.caption(
         "📊 **Line chart** — annual total economic damage for the 8 highest-damage event types. "
