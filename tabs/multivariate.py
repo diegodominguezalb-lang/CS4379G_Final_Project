@@ -1,6 +1,5 @@
 """Tab 5 — Multivariate Analysis."""
 
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -51,42 +50,69 @@ def render_multivariate(df: pd.DataFrame) -> None:
 
     st.markdown("---")
 
-    # ── Parallel coordinates ──────────────────────────────────────────────────
-    st.subheader("Parallel Coordinates — Event-Level Damage Profile")
-    top8 = (
+    # ── Event-type profile heatmap ────────────────────────────────────────────
+    st.subheader("Event-Type Risk Profile")
+    profile_cols = {c: c for c in [
+        "DAMAGE_PROPERTY", "DAMAGE_CROPS",
+        "INJURIES_DIRECT", "DEATHS_DIRECT",
+    ] if c in df.columns}
+
+    top15 = (
         df.groupby("EVENT_TYPE")["TOTAL_DAMAGE"]
         .sum()
         .sort_values(ascending=False)
-        .head(8)
+        .head(15)
         .index.tolist()
     )
-    pc_df = df[df["EVENT_TYPE"].isin(top8)].copy()
-    pc_sample = pc_df.sample(min(3000, len(pc_df)), random_state=42)
-    pc_cols = [c for c in ["DAMAGE_PROPERTY", "DAMAGE_CROPS", "INJURIES_DIRECT", "DEATHS_DIRECT"]
-               if c in pc_sample.columns]
+    agg = df[df["EVENT_TYPE"].isin(top15)].groupby("EVENT_TYPE").agg(
+        Event_Count=("EVENT_TYPE", "count"),
+        **{k: (k, "sum") for k in profile_cols}
+    ).reindex(top15)
 
-    for col in ["DAMAGE_PROPERTY", "DAMAGE_CROPS"]:
-        if col in pc_sample.columns:
-            pc_sample[f"log_{col}"] = np.log10(pc_sample[col].clip(lower=1))
-    display_cols = [f"log_{c}" if c in ["DAMAGE_PROPERTY", "DAMAGE_CROPS"] else c
-                    for c in pc_cols]
+    # Rename columns for display
+    agg.columns = ["Event Count", "Property Damage", "Crop Damage", "Injuries", "Deaths"]
 
-    event_type_codes = {et: i for i, et in enumerate(top8)}
-    pc_sample["ET_CODE"] = pc_sample["EVENT_TYPE"].map(event_type_codes)
+    # Min-max normalize each column so all metrics share the same 0-1 scale
+    norm = agg.copy().astype(float)
+    for col in norm.columns:
+        mn, mx = norm[col].min(), norm[col].max()
+        norm[col] = (norm[col] - mn) / (mx - mn) if mx > mn else 0.0
 
-    fig_pc = px.parallel_coordinates(
-        pc_sample,
-        dimensions=display_cols,
-        color="ET_CODE",
-        color_continuous_scale=px.colors.qualitative.Safe,
-        title="Parallel Coordinates — Top 8 Event Types (sampled, damage in log₁₀)",
-        labels={f: f.replace("log_DAMAGE_", "log₁₀(").replace("_", " ").title() + (")" if f.startswith("log_") else "")
-                for f in display_cols},
+    # Build hover text showing the raw values with USD formatting
+    from utils.formatting import _fmt_usd
+    hover = norm.copy().astype(str)
+    for i, et in enumerate(top15):
+        raw = agg.loc[et]
+        hover.loc[et, "Event Count"]      = f"{int(raw['Event Count']):,}"
+        hover.loc[et, "Property Damage"]  = _fmt_usd(raw["Property Damage"])
+        hover.loc[et, "Crop Damage"]      = _fmt_usd(raw["Crop Damage"])
+        hover.loc[et, "Injuries"]         = f"{int(raw['Injuries']):,}"
+        hover.loc[et, "Deaths"]           = f"{int(raw['Deaths']):,}"
+
+    fig_profile = px.imshow(
+        norm,
+        text_auto=False,
+        color_continuous_scale="YlOrRd",
+        zmin=0, zmax=1,
+        title="Normalized Risk Profile — Top 15 Event Types",
+        aspect="auto",
+        labels={"color": "Relative intensity"},
+        custom_data=[hover.values],
     )
-    st.plotly_chart(fig_pc, use_container_width=True)
+    # Overlay the raw-value text
+    for col_idx, col_name in enumerate(norm.columns):
+        for row_idx, et in enumerate(top15):
+            fig_profile.add_annotation(
+                x=col_idx, y=row_idx,
+                text=hover.loc[et, col_name],
+                showarrow=False,
+                font=dict(size=9, color="black"),
+            )
+    fig_profile.update_layout(height=520, coloraxis_showscale=True)
+    st.plotly_chart(fig_profile, use_container_width=True)
     st.caption(
-        "📊 **Parallel coordinates plot** — each line is a sampled event colored by event type. "
-        "Property and crop damage axes use log₁₀ scale; injuries and deaths are raw counts. "
-        "Drag an axis range to filter lines interactively and reveal how event profiles cluster. "
-        "Color key: " + " | ".join(f"{i} = {et}" for et, i in event_type_codes.items())
+        "📊 **Normalized heatmap** — each column is min-max scaled to 0–1 so metrics with "
+        "very different units (dollars vs. deaths) are visually comparable. "
+        "Cell text shows the actual raw value. Darker = relatively higher within that metric. "
+        "Rows are ordered by total damage (highest at top)."
     )
