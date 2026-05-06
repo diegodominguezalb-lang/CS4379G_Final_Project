@@ -135,11 +135,21 @@ def render_regional(df: pd.DataFrame) -> None:
                     state_corrs[state] = c
 
         if state_corrs:
+            _US_STATES = {
+                "ALABAMA","ALASKA","ARIZONA","ARKANSAS","CALIFORNIA","COLORADO",
+                "CONNECTICUT","DELAWARE","FLORIDA","GEORGIA","HAWAII","IDAHO",
+                "ILLINOIS","INDIANA","IOWA","KANSAS","KENTUCKY","LOUISIANA",
+                "MAINE","MARYLAND","MASSACHUSETTS","MICHIGAN","MINNESOTA",
+                "MISSISSIPPI","MISSOURI","MONTANA","NEBRASKA","NEVADA",
+                "NEW HAMPSHIRE","NEW JERSEY","NEW MEXICO","NEW YORK",
+                "NORTH CAROLINA","NORTH DAKOTA","OHIO","OKLAHOMA","OREGON",
+                "PENNSYLVANIA","RHODE ISLAND","SOUTH CAROLINA","SOUTH DAKOTA",
+                "TENNESSEE","TEXAS","UTAH","VERMONT","VIRGINIA","WASHINGTON",
+                "WEST VIRGINIA","WISCONSIN","WYOMING","DISTRICT OF COLUMBIA",
+            }
             corr_df = pd.DataFrame(state_corrs.items(), columns=["STATE", "CORRELATION"])
+            corr_df = corr_df[corr_df["STATE"].str.upper().isin(_US_STATES)]
             corr_df = corr_df.sort_values("CORRELATION", ascending=True)
-            corr_df["COLOR"] = corr_df["CORRELATION"].apply(
-                lambda v: "High" if v >= 0.5 else ("Low" if v < 0 else "Mid")
-            )
             fig_corr = px.bar(
                 corr_df,
                 x="CORRELATION",
@@ -153,8 +163,9 @@ def render_regional(df: pd.DataFrame) -> None:
             )
             fig_corr.update_layout(
                 coloraxis_showscale=False,
-                height=max(400, len(corr_df) * 14),
+                height=500,
                 margin=dict(l=10, r=10),
+                yaxis=dict(tickfont=dict(size=10)),
             )
             fig_corr.update_traces(
                 hovertemplate="<b>%{y}</b><br>r = %{x:.2f}<extra></extra>"
