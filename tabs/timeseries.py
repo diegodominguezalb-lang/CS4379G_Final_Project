@@ -75,13 +75,27 @@ def render_timeseries(df: pd.DataFrame) -> None:
     st.markdown("---")
     st.subheader("Seasonal Patterns")
 
-    all_states = sorted(df["STATE"].dropna().unique())
-    selected_state = st.selectbox(
-        "Filter by State",
-        options=["All States"] + all_states,
-        key="seasonal_state_picker",
-    )
-    seasonal_df = df if selected_state == "All States" else df[df["STATE"] == selected_state]
+    filter_col1, filter_col2 = st.columns(2)
+    with filter_col1:
+        all_states = sorted(df["STATE"].dropna().unique())
+        selected_state = st.selectbox(
+            "Filter by State",
+            options=["All States"] + all_states,
+            key="seasonal_state_picker",
+        )
+    with filter_col2:
+        all_event_types = sorted(df["EVENT_TYPE"].dropna().unique())
+        selected_event = st.selectbox(
+            "Filter by Disaster Type",
+            options=["All Types"] + all_event_types,
+            key="seasonal_event_picker",
+        )
+
+    seasonal_df = df.copy()
+    if selected_state != "All States":
+        seasonal_df = seasonal_df[seasonal_df["STATE"] == selected_state]
+    if selected_event != "All Types":
+        seasonal_df = seasonal_df[seasonal_df["EVENT_TYPE"] == selected_event]
 
     col_month1, col_month2 = st.columns(2)
 
