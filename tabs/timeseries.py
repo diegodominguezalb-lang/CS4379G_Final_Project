@@ -74,10 +74,19 @@ def render_timeseries(df: pd.DataFrame) -> None:
     # ── Monthly seasonality ───────────────────────────────────────────────────
     st.markdown("---")
     st.subheader("Seasonal Patterns")
+
+    all_states = sorted(df["STATE"].dropna().unique())
+    selected_state = st.selectbox(
+        "Filter by State",
+        options=["All States"] + all_states,
+        key="seasonal_state_picker",
+    )
+    seasonal_df = df if selected_state == "All States" else df[df["STATE"] == selected_state]
+
     col_month1, col_month2 = st.columns(2)
 
     with col_month1:
-        monthly = df["MONTH"].value_counts().sort_index().reset_index()
+        monthly = seasonal_df["MONTH"].value_counts().sort_index().reset_index()
         monthly.columns = ["MONTH", "COUNT"]
         monthly["MONTH_NAME"] = monthly["MONTH"].map(_MONTH_NAMES)
         fig_month = px.bar(
@@ -94,7 +103,7 @@ def render_timeseries(df: pd.DataFrame) -> None:
         st.plotly_chart(fig_month, use_container_width=True)
 
     with col_month2:
-        monthly_dmg = df.groupby("MONTH")["TOTAL_DAMAGE"].sum().reset_index()
+        monthly_dmg = seasonal_df.groupby("MONTH")["TOTAL_DAMAGE"].sum().reset_index()
         monthly_dmg["MONTH_NAME"] = monthly_dmg["MONTH"].map(_MONTH_NAMES)
         fig_month_dmg = px.bar(
             monthly_dmg,
