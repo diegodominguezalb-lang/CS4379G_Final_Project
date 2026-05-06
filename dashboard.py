@@ -26,6 +26,38 @@ OKABE_ITO = [
     "#0072B2", "#D55E00", "#CC79A7", "#999999",
 ]
 
+# ── Dollar formatting helpers ─────────────────────────────────────────────────
+def _fmt_usd(v: float) -> str:
+    """Return a compact, human-readable USD string: $1.2T / $500B / $25M / $1.5K."""
+    av = abs(v)
+    if av >= 1e12: return f"${v/1e12:.2f}T"
+    if av >= 1e9:  return f"${v/1e9:.2f}B"
+    if av >= 1e6:  return f"${v/1e6:.2f}M"
+    if av >= 1e3:  return f"${v/1e3:.2f}K"
+    return f"${v:,.0f}"
+
+def _dollar_yaxis(fig, max_val: float) -> None:
+    """Replace Plotly's SI-prefix y-axis ticks (which use G for billion)
+    with proper financial labels: $K / $M / $B / $T."""
+    if not max_val or max_val <= 0:
+        return
+    if max_val >= 1e12:
+        unit, suffix = 1e12, "T"
+    elif max_val >= 1e9:
+        unit, suffix = 1e9, "B"
+    elif max_val >= 1e6:
+        unit, suffix = 1e6, "M"
+    else:
+        unit, suffix = 1e3, "K"
+    raw = max_val / unit / 5
+    mag = 10 ** int(np.floor(np.log10(max(raw, 1e-10))))
+    step = np.ceil(raw / mag) * mag * unit
+    vals = np.arange(0, max_val * 1.2, step)
+    fig.update_yaxes(
+        tickvals=vals.tolist(),
+        ticktext=[f"${v/unit:.0f}{suffix}" for v in vals],
+    )
+
 # ── Reproducibility: fix random seed (L4 · Compute) ──────────────────────────
 np.random.seed(42)
 
@@ -491,8 +523,8 @@ with tab_damage:
         color_discrete_map={"DAMAGE_PROPERTY": "#1f77b4", "DAMAGE_CROPS": "#ff7f0e"},
     )
     fig_total.update_xaxes(tickangle=45)
-    fig_total.update_yaxes(tickformat="$.2s")
-    fig_total.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: $%{y:.3s}<extra></extra>")
+    _dollar_yaxis(fig_total, damage_by_type[["DAMAGE_PROPERTY", "DAMAGE_CROPS"]].sum(axis=1).max())
+    fig_total.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: $%{y:,.0f}<extra></extra>")
     st.plotly_chart(fig_total, use_container_width=True)
 
     st.markdown("---")
@@ -519,8 +551,8 @@ with tab_damage:
             color_continuous_scale="Viridis",
         )
         fig_avg.update_xaxes(tickangle=45)
-        fig_avg.update_yaxes(tickformat="$.2s")
-        fig_avg.update_traces(hovertemplate="<b>%{x}</b><br>Avg Damage: $%{y:.3s}<extra></extra>")
+        _dollar_yaxis(fig_avg, avg_damage["AVG_TOTAL"].max())
+        fig_avg.update_traces(hovertemplate="<b>%{x}</b><br>Avg Damage: $%{y:,.0f}<extra></extra>")
         fig_avg.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_avg, use_container_width=True)
 
@@ -547,9 +579,8 @@ with tab_damage:
         fig_scatter.update_traces(
             textposition="top center",
             textfont_size=9,
-            hovertemplate="<b>%{text}</b><br>Events: %{x:,}<br>Total Damage: $%{y:.3s}<extra></extra>",
+            hovertemplate="<b>%{text}</b><br>Events: %{x:,}<br>Total Damage: $%{y:,.0f}<extra></extra>",
         )
-        fig_scatter.update_yaxes(tickformat="$.2s")
         fig_scatter.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_scatter, use_container_width=True)
 
@@ -645,10 +676,18 @@ with tab_regional:
         color_continuous_scale="OrRd",
         title=f"{map_metric.replace('_', ' ').title()} by State",
     )
-    _is_damage_metric = map_metric != "EVENT_COUNT"
-    fig_map.update_coloraxes(
-        colorbar_tickformat="$.2s" if _is_damage_metric else ","
-    )
+    if map_metric != "EVENT_COUNT":
+        _max_map = state_damage_us[map_metric].max()
+        if _max_map >= 1e12: _cb_fmt = "$.2fT"; _cb_div = 1e12
+        elif _max_map >= 1e9: _cb_fmt = "$.1fB"; _cb_div = 1e9
+        elif _max_map >= 1e6: _cb_fmt = "$.1fM"; _cb_div = 1e6
+        else: _cb_fmt = "$.1fK"; _cb_div = 1e3
+        _cb_vals = np.linspace(0, _max_map, 5)
+        fig_map.update_coloraxes(
+            colorbar_tickvals=_cb_vals.tolist(),
+            colorbar_ticktext=[f"${v/_cb_div:.0f}{'TBMK'['TBMK'.index(_cb_fmt[-1])]}"
+                               for v in _cb_vals],
+        )
     fig_map.update_layout(height=500)
     st.plotly_chart(fig_map, use_container_width=True)
     st.caption(
@@ -675,8 +714,8 @@ with tab_regional:
             color_discrete_map={"PROPERTY_DAMAGE": "#1f77b4", "CROP_DAMAGE": "#ff7f0e"},
         )
         fig_state_bar.update_xaxes(tickangle=45)
-        fig_state_bar.update_yaxes(tickformat="$.2s")
-        fig_state_bar.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: $%{y:.3s}<extra></extra>")
+        _dollar_yaxis(fig_state_bar, top_states[["PROPERTY_DAMAGE", "CROP_DAMAGE"]].sum(axis=1).max())
+        fig_state_bar.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: $%{y:,.0f}<extra></extra>")
         st.plotly_chart(fig_state_bar, use_container_width=True)
 
     # State-level frequency vs damage correlation histogram
@@ -729,8 +768,8 @@ with tab_regional:
         color_continuous_scale="Blues",
     )
     fig_drill.update_xaxes(tickangle=45)
-    fig_drill.update_yaxes(tickformat="$.2s")
-    fig_drill.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:.3s}<extra></extra>")
+    _dollar_yaxis(fig_drill, state_type_dmg["TOTAL_DAMAGE"].max())
+    fig_drill.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:,.0f}<extra></extra>")
     fig_drill.update_layout(coloraxis_showscale=False)
     st.plotly_chart(fig_drill, use_container_width=True)
 
@@ -781,8 +820,8 @@ with tab_timeseries:
             color="TOTAL_DAMAGE",
             color_continuous_scale="Reds",
         )
-        fig_dmg_ts.update_yaxes(tickformat="$.2s")
-        fig_dmg_ts.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:.3s}<extra></extra>")
+        _dollar_yaxis(fig_dmg_ts, yearly_dmg["TOTAL_DAMAGE"].max())
+        fig_dmg_ts.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:,.0f}<extra></extra>")
         fig_dmg_ts.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_dmg_ts, use_container_width=True)
         st.caption(
@@ -828,8 +867,8 @@ with tab_timeseries:
             color="TOTAL_DAMAGE",
             color_continuous_scale="Oranges",
         )
-        fig_month_dmg.update_yaxes(tickformat="$.2s")
-        fig_month_dmg.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:.3s}<extra></extra>")
+        _dollar_yaxis(fig_month_dmg, monthly_dmg["TOTAL_DAMAGE"].max())
+        fig_month_dmg.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:,.0f}<extra></extra>")
         fig_month_dmg.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_month_dmg, use_container_width=True)
 
@@ -859,8 +898,8 @@ with tab_timeseries:
         labels={"YEAR": "Year", "TOTAL_DAMAGE": "Total Damage (USD)", "EVENT_TYPE": "Event Type"},
         markers=True,
     )
-    fig_trend.update_yaxes(tickformat="$.2s")
-    fig_trend.update_traces(hovertemplate="<b>%{fullData.name}</b><br>Year: %{x}<br>Damage: $%{y:.3s}<extra></extra>")
+    _dollar_yaxis(fig_trend, trend_df["TOTAL_DAMAGE"].max())
+    fig_trend.update_traces(hovertemplate="<b>%{fullData.name}</b><br>Year: %{x}<br>Damage: $%{y:,.0f}<extra></extra>")
     st.plotly_chart(fig_trend, use_container_width=True)
     st.caption(
         "📊 **Line chart** — annual total economic damage for the 8 highest-damage event types. "
