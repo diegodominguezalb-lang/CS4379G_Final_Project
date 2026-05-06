@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from utils.formatting import OKABE_ITO, _dollar_yaxis
+from utils.formatting import OKABE_ITO, _dollar_yaxis, _fmt_usd
 
 _MONTH_NAMES = {
     1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
@@ -38,6 +38,7 @@ def render_timeseries(df: pd.DataFrame) -> None:
             annotation_text="1996 methodology change",
             annotation_position="top right",
         )
+        fig_ts.update_yaxes(rangemode="tozero")
         st.plotly_chart(fig_ts, use_container_width=True)
         st.caption(
             "⚠️ **Methodology note:** The sharp increase starting ~1996 is primarily a "
@@ -49,6 +50,7 @@ def render_timeseries(df: pd.DataFrame) -> None:
     # ── Annual total damage ───────────────────────────────────────────────────
     with col_ts2:
         yearly_dmg = df.groupby("YEAR")["TOTAL_DAMAGE"].sum().reset_index()
+        yearly_dmg["DMG_LABEL"] = yearly_dmg["TOTAL_DAMAGE"].apply(_fmt_usd)
         fig_dmg_ts = px.bar(
             yearly_dmg,
             x="YEAR",
@@ -57,9 +59,10 @@ def render_timeseries(df: pd.DataFrame) -> None:
             labels={"YEAR": "Year", "TOTAL_DAMAGE": "Total Damage (USD)"},
             color="TOTAL_DAMAGE",
             color_continuous_scale="Reds",
+            custom_data=["DMG_LABEL"],
         )
         _dollar_yaxis(fig_dmg_ts, yearly_dmg["TOTAL_DAMAGE"].max())
-        fig_dmg_ts.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:,.0f}<extra></extra>")
+        fig_dmg_ts.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: %{customdata[0]}<extra></extra>")
         fig_dmg_ts.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_dmg_ts, use_container_width=True)
         st.caption(
@@ -124,6 +127,7 @@ def render_timeseries(df: pd.DataFrame) -> None:
         .sum()
         .reset_index()
     )
+    trend_df["DMG_LABEL"] = trend_df["TOTAL_DAMAGE"].apply(_fmt_usd)
     fig_trend = px.line(
         trend_df,
         x="YEAR",
@@ -133,9 +137,10 @@ def render_timeseries(df: pd.DataFrame) -> None:
         title="Annual Damage by Top 8 Event Types",
         labels={"YEAR": "Year", "TOTAL_DAMAGE": "Total Damage (USD)", "EVENT_TYPE": "Event Type"},
         markers=True,
+        custom_data=["DMG_LABEL"],
     )
     _dollar_yaxis(fig_trend, trend_df["TOTAL_DAMAGE"].max())
-    fig_trend.update_traces(hovertemplate="<b>%{fullData.name}</b><br>Year: %{x}<br>Damage: $%{y:,.0f}<extra></extra>")
+    fig_trend.update_traces(hovertemplate="<b>%{fullData.name}</b><br>Year: %{x}<br>Damage: %{customdata[0]}<extra></extra>")
     st.plotly_chart(fig_trend, use_container_width=True)
     st.caption(
         "📊 **Line chart** — annual total economic damage for the 8 highest-damage event types. "

@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from utils.formatting import _dollar_yaxis
+from utils.formatting import _dollar_yaxis, _fmt_usd
 
 _STATE_ABBREV = {
     "ALABAMA": "AL", "ALASKA": "AK", "ARIZONA": "AZ", "ARKANSAS": "AR",
@@ -91,18 +91,27 @@ def render_regional(df: pd.DataFrame) -> None:
     # ── Top 15 states by damage ───────────────────────────────────────────────
     with col_bar_state:
         top_states = state_damage.sort_values("TOTAL_DAMAGE", ascending=False).head(15)
+        top_states_melted = top_states.melt(
+            id_vars="STATE",
+            value_vars=["PROPERTY_DAMAGE", "CROP_DAMAGE"],
+            var_name="Type",
+            value_name="Damage",
+        )
+        top_states_melted["DMG_LABEL"] = top_states_melted["Damage"].apply(_fmt_usd)
         fig_state_bar = px.bar(
-            top_states,
+            top_states_melted,
             x="STATE",
-            y=["PROPERTY_DAMAGE", "CROP_DAMAGE"],
+            y="Damage",
+            color="Type",
             barmode="stack",
             title="Top 15 States — Total Damage",
-            labels={"value": "Damage (USD)", "variable": "Type", "STATE": "State"},
+            labels={"Damage": "Damage (USD)", "Type": "Type", "STATE": "State"},
             color_discrete_map={"PROPERTY_DAMAGE": "#1f77b4", "CROP_DAMAGE": "#ff7f0e"},
+            custom_data=["DMG_LABEL"],
         )
         fig_state_bar.update_xaxes(tickangle=45)
         _dollar_yaxis(fig_state_bar, top_states[["PROPERTY_DAMAGE", "CROP_DAMAGE"]].sum(axis=1).max())
-        fig_state_bar.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: $%{y:,.0f}<extra></extra>")
+        fig_state_bar.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: %{customdata[0]}<extra></extra>")
         st.plotly_chart(fig_state_bar, use_container_width=True)
 
     # ── State-level frequency–damage correlation histogram ───────────────────
@@ -145,6 +154,7 @@ def render_regional(df: pd.DataFrame) -> None:
         .sort_values("TOTAL_DAMAGE", ascending=False)
         .head(10)
     )
+    state_type_dmg["DMG_LABEL"] = state_type_dmg["TOTAL_DAMAGE"].apply(_fmt_usd)
     fig_drill = px.bar(
         state_type_dmg,
         x="EVENT_TYPE",
@@ -153,9 +163,10 @@ def render_regional(df: pd.DataFrame) -> None:
         labels={"TOTAL_DAMAGE": "Total Damage (USD)", "EVENT_TYPE": "Event Type"},
         color="TOTAL_DAMAGE",
         color_continuous_scale="Blues",
+        custom_data=["DMG_LABEL"],
     )
     fig_drill.update_xaxes(tickangle=45)
     _dollar_yaxis(fig_drill, state_type_dmg["TOTAL_DAMAGE"].max())
-    fig_drill.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: $%{y:,.0f}<extra></extra>")
+    fig_drill.update_traces(hovertemplate="<b>%{x}</b><br>Total Damage: %{customdata[0]}<extra></extra>")
     fig_drill.update_layout(coloraxis_showscale=False)
     st.plotly_chart(fig_drill, use_container_width=True)

@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from utils.formatting import OKABE_ITO, _dollar_yaxis
+from utils.formatting import OKABE_ITO, _dollar_yaxis, _fmt_usd
 
 
 def render_damage(df: pd.DataFrame) -> None:
@@ -26,18 +26,27 @@ def render_damage(df: pd.DataFrame) -> None:
     damage_by_type["TOTAL_DAMAGE"] = damage_by_type["DAMAGE_PROPERTY"] + damage_by_type["DAMAGE_CROPS"]
     damage_by_type = damage_by_type.sort_values("TOTAL_DAMAGE", ascending=False).head(top_n_slider)
 
+    damage_by_type_melted = damage_by_type.melt(
+        id_vars="EVENT_TYPE",
+        value_vars=["DAMAGE_PROPERTY", "DAMAGE_CROPS"],
+        var_name="Damage Type",
+        value_name="Damage",
+    )
+    damage_by_type_melted["DMG_LABEL"] = damage_by_type_melted["Damage"].apply(_fmt_usd)
     fig_total = px.bar(
-        damage_by_type,
+        damage_by_type_melted,
         x="EVENT_TYPE",
-        y=["DAMAGE_PROPERTY", "DAMAGE_CROPS"],
+        y="Damage",
+        color="Damage Type",
         barmode="stack",
         title=f"Top {top_n_slider} Event Types — Total Damage (Property + Crops)",
-        labels={"value": "Damage (USD)", "variable": "Damage Type", "EVENT_TYPE": "Event Type"},
+        labels={"Damage": "Damage (USD)", "Damage Type": "Damage Type", "EVENT_TYPE": "Event Type"},
         color_discrete_map={"DAMAGE_PROPERTY": "#1f77b4", "DAMAGE_CROPS": "#ff7f0e"},
+        custom_data=["DMG_LABEL"],
     )
     fig_total.update_xaxes(tickangle=45)
     _dollar_yaxis(fig_total, damage_by_type[["DAMAGE_PROPERTY", "DAMAGE_CROPS"]].sum(axis=1).max())
-    fig_total.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: $%{y:,.0f}<extra></extra>")
+    fig_total.update_traces(hovertemplate="<b>%{x}</b><br>%{fullData.name}: %{customdata[0]}<extra></extra>")
     st.plotly_chart(fig_total, use_container_width=True)
 
     st.markdown("---")
@@ -53,6 +62,7 @@ def render_damage(df: pd.DataFrame) -> None:
         )
         avg_damage["AVG_TOTAL"] = avg_damage["DAMAGE_PROPERTY"] + avg_damage["DAMAGE_CROPS"]
         avg_damage = avg_damage.sort_values("AVG_TOTAL", ascending=False).head(top_n_slider)
+        avg_damage["DMG_LABEL"] = avg_damage["AVG_TOTAL"].apply(_fmt_usd)
 
         fig_avg = px.bar(
             avg_damage,
@@ -62,10 +72,11 @@ def render_damage(df: pd.DataFrame) -> None:
             labels={"AVG_TOTAL": "Avg Total Damage (USD)", "EVENT_TYPE": "Event Type"},
             color="AVG_TOTAL",
             color_continuous_scale="Viridis",
+            custom_data=["DMG_LABEL"],
         )
         fig_avg.update_xaxes(tickangle=45)
         _dollar_yaxis(fig_avg, avg_damage["AVG_TOTAL"].max())
-        fig_avg.update_traces(hovertemplate="<b>%{x}</b><br>Avg Damage: $%{y:,.0f}<extra></extra>")
+        fig_avg.update_traces(hovertemplate="<b>%{x}</b><br>Avg Damage: %{customdata[0]}<extra></extra>")
         fig_avg.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_avg, use_container_width=True)
 
@@ -74,6 +85,7 @@ def render_damage(df: pd.DataFrame) -> None:
         freq_df = df["EVENT_TYPE"].value_counts().reset_index()
         freq_df.columns = ["EVENT_TYPE", "COUNT"]
         scatter_df = pd.merge(freq_df, damage_by_type[["EVENT_TYPE", "TOTAL_DAMAGE"]], on="EVENT_TYPE")
+        scatter_df["DMG_LABEL"] = scatter_df["TOTAL_DAMAGE"].apply(_fmt_usd)
 
         fig_scatter = px.scatter(
             scatter_df,
@@ -88,11 +100,12 @@ def render_damage(df: pd.DataFrame) -> None:
             size_max=40,
             color="TOTAL_DAMAGE",
             color_continuous_scale="Reds",
+            custom_data=["DMG_LABEL"],
         )
         fig_scatter.update_traces(
             textposition="top center",
             textfont_size=9,
-            hovertemplate="<b>%{text}</b><br>Events: %{x:,}<br>Total Damage: $%{y:,.0f}<extra></extra>",
+            hovertemplate="<b>%{text}</b><br>Events: %{x:,}<br>Total Damage: %{customdata[0]}<extra></extra>",
         )
         fig_scatter.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig_scatter, use_container_width=True)
