@@ -23,7 +23,7 @@ def _fmt_usd(v: float) -> str:
 def _dollar_yaxis(fig, max_val: float) -> None:
     """Replace Plotly's SI-prefix y-axis ticks (which use G for billion)
     with proper financial labels: $K / $M / $B / $T."""
-    if not max_val or max_val <= 0:
+    if not max_val or max_val <= 0 or not np.isfinite(max_val):
         return
     if max_val >= 1e12:
         unit, suffix = 1e12, "T"
